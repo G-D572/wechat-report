@@ -32,8 +32,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 运行分析
-        run: python3 scripts/analyze.py messages.txt index.html
+      - name: 运行分析（如果有新数据）
+        run: |
+          if [ -f messages.txt ] && [ -s messages.txt ]; then
+            echo "📊 检测到聊天记录，开始分析..."
+            python3 scripts/analyze.py messages.txt index.html
+          else
+            echo "⚠️ 没有聊天记录文件，使用现有的 index.html"
+          fi
 
       - name: 上传网页
         uses: actions/upload-pages-artifact@v3
