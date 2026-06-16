@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>交流2群🌲2026IP训练营 - 群聊分析报告</title>
+<style>
+:root {
+  --bg: #000000;
+  --green: #00ff41;
+  --green2: #00cc33;
+  --orange: #ff6a00;
+  --orange2: #ff8c00;
+  --card-bg: #0a0a0a;
+  --border: #1a1a1a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+@font-face {
+  font-family: 'Mono'; src: local('Courier New'), local('Consolas'), local('monospace');
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: #fff; overflow: hidden; height: 100vh;
+  -webkit-font-smoothing: antialiased; user-select: none;
+}
+
+/* ===== SLIDE SYSTEM ===== */
+.slides { position:relative; width:100vw; height:100vh; }
+.slide {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  opacity:0; transform:scale(.92);
+  transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);
+  pointer-events:none; padding:40px 24px;
+}
+.slide.active { opacity:1; transform:scale(1); pointer-events:auto; z-index:1; }
+.slide.exit-left { opacity:0; transform:translateX(-60px) scale(.95); }
+.slide.exit-right { opacity:0; transform:translateX(60px) scale(.95); }
+
+/* ===== NAVIGATION ===== */
+.nav { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:100; display:flex; gap:10px; align-items:center; }
+.nav-dot { width:8px; height:8px; border-radius:50%; background:#333; cursor:pointer; transition:all .3s; }
+.nav-dot.active { background:var(--green); width:24px; border-radius:4px; box-shadow:0 0 12px var(--green); }
+.nav-arrow {
+  position:fixed; top:50%; transform:translateY(-50%); z-index:100;
+  width:44px; height:44px; border-radius:50%; border:1px solid #222;
+  background:rgba(10,10,10,.8); color:#888; font-size:20px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .3s; backdrop-filter:blur(10px);
+}
+.nav-arrow:hover { border-color:var(--green); color:var(--green); box-shadow:0 0 20px rgba(0,255,65,.15); }
+.nav-prev { left:20px; }
+.nav-next { right:20px; }
+
+.slide-num {
+  position:fixed; top:24px; right:28px; z-index:100;
+  font-family:'Mono',monospace; font-size:13px; color:#555; letter-spacing:2px;
+}
+
+/* ===== BGM TOGGLE ===== */
+.bgm-toggle {
+  position:fixed; top:24px; left:28px; z-index:100;
+  width:36px; height:36px; border-radius:50%; border:1px solid #222;
+  background:rgba(10,10,10,.8); color:#555; font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .3s; backdrop-filter:blur(10px);
+}
+.bgm-toggle.on { border-color:var(--orange); color:var(--orange); }
+.bgm-toggle .eq { display:none; gap:2px; align-items:end; }
+.bgm-toggle.on .eq { display:flex; }
+.bgm-toggle.on .play-icon { display:none; }
+.eq-bar { width:2px; background:var(--orange); border-radius:2px; animation:eq .6s ease-in-out infinite alternate; }
+.eq-bar:nth-child(1) { height:6px; animation-delay:0s; }
+.eq-bar:nth-child(2) { height:12px; animation-delay:.15s; }
+.eq-bar:nth-child(3) { height:8px; animation-delay:.3s; }
+@keyframes eq { to { transform:scaleY(.4); } }
+
+/* ===== COMMON ELEMENTS ===== */
+.glow-text {
+  text-shadow: 0 0 40px rgba(0,255,65,.3), 0 0 80px rgba(0,255,65,.1);
+}
+.glow-orange {
+  text-shadow: 0 0 40px rgba(255,106,0,.3), 0 0 80px rgba(255,106,0,.1);
+}
+.overline {
+  font-family:'Mono',monospace; font-size:11px; letter-spacing:4px;
+  color:var(--orange); text-transform:uppercase; margin-bottom:8px;
+}
+.huge { font-size:clamp(60px,12vw,120px); font-weight:900; letter-spacing:-3px; line-height:1; }
+.big { font-size:clamp(32px,6vw,56px); font-weight:800; letter-spacing:-1px; line-height:1.1; }
+.green { color:var(--green); }
+.orange { color:var(--orange); }
+.dim { color:#444; font-size:13px; }
+.muted { color:#666; font-size:14px; }
+
+/* Animations */
+@keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+@keyframes slideRight { from { width:0; } }
+@keyframes countUp { from { opacity:0; transform:translateY(10px); } }
+.anim-fadeup { animation:fadeUp .8s cubic-bezier(.16,1,.3,1) both; }
+.anim-fadein { animation:fadeIn 1s ease both; }
+
+/* ===== SLIDE 1: TITLE ===== */
+.s1-grid { display:grid; grid-template-columns:1fr 1fr; gap:40px; max-width:900px; width:100%; align-items:center; }
+.s1-left { text-align:left; }
+.s1-right { display:flex; flex-direction:column; gap:16px; }
+.s1-stat { border-left:2px solid var(--green); padding-left:16px; }
+.s1-stat .val { font-size:42px; font-weight:900; color:var(--green); line-height:1; }
+.s1-stat .lbl { font-size:12px; color:#555; margin-top:4px; letter-spacing:1px; }
+.title-line { width:60px; height:3px; background:var(--orange); margin:16px 0; }
+.scroll-hint { position:absolute; bottom:60px; color:#333; font-size:12px; letter-spacing:2px; animation:pulse 2s infinite; }
+
+/* ===== SLIDE 2: OVERVIEW ===== */
+.stats-row { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; max-width:900px; width:100%; }
+.stat-box {
+  flex:1; min-width:130px; max-width:170px; background:var(--card-bg);
+  border:1px solid var(--border); border-radius:16px; padding:28px 16px;
+  text-align:center; position:relative; overflow:hidden;
+  transition:all .3s;
+}
+.stat-box:hover { border-color:var(--green); transform:translateY(-4px); }
+.stat-box:hover::after { opacity:1; }
+.stat-box::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--green),transparent);
+  opacity:0; transition:opacity .3s;
+}
+.stat-box .num {
+  font-size:clamp(32px,5vw,48px); font-weight:900; color:var(--green); line-height:1;
+  font-family:'Mono',monospace;
+}
+.stat-box .lbl { font-size:12px; color:#555; margin-top:8px; letter-spacing:1px; }
+
+/* ===== SLIDE 3: LEADERBOARD ===== */
+.lb-wrap { max-width:700px; width:100%; display:flex; flex-direction:column; gap:10px; }
+.lb-item {
+  display:flex; align-items:center; gap:14px; padding:12px 16px;
+  background:var(--card-bg); border:1px solid var(--border); border-radius:12px;
+  position:relative; overflow:hidden; transition:all .3s;
+}
+.lb-item:hover { border-color:var(--green); }
+.lb-item::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+}
+.lb-item:nth-child(1)::before { background:var(--orange); box-shadow:0 0 10px var(--orange); }
+.lb-item:nth-child(2)::before { background:var(--orange2); }
+.lb-item:nth-child(3)::before { background:var(--green); }
+.lb-rank-num {
+  font-family:'Mono',monospace; font-size:20px; font-weight:900; width:30px; text-align:center;
+}
+.lb-item:nth-child(1) .lb-rank-num { color:var(--orange); }
+.lb-item:nth-child(2) .lb-rank-num { color:var(--orange2); }
+.lb-item:nth-child(3) .lb-rank-num { color:var(--green); }
+.lb-item:nth-child(n+4) .lb-rank-num { color:#333; }
+.lb-av {
+  width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; flex-shrink:0;
+}
+.lb-av.c1 { background:var(--orange); color:#000; }
+.lb-av.c2 { background:var(--orange2); color:#000; }
+.lb-av.c3 { background:var(--green); color:#000; }
+.lb-av.c4 { background:#1a1a1a; color:#555; }
+.lb-info { flex:1; min-width:0; }
+.lb-name { font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lb-role { font-size:11px; color:#333; }
+.lb-bar-wrap { flex:1; height:4px; background:#111; border-radius:2px; max-width:200px; overflow:hidden; }
+.lb-bar-fill { height:100%; border-radius:2px; transition:width 1s cubic-bezier(.16,1,.3,1); }
+.lb-count { font-family:'Mono',monospace; font-size:16px; font-weight:700; color:var(--green); width:40px; text-align:right; }
+
+/* ===== SLIDE 4: HEATMAP ===== */
+.hm-wrap { max-width:900px; width:100%; }
+.hm-grid { display:flex; gap:4px; align-items:flex-end; justify-content:center; height:260px; }
+.hm-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.hm-bar {
+  width:100%; max-width:32px; border-radius:4px;
+  transition:height 1s cubic-bezier(.16,1,.3,1);
+  position:relative;
+}
+.hm-bar.peek { background:var(--orange); }
+.hm-bar.hot { background:var(--green); }
+.hm-count { font-family:'Mono',monospace; font-size:11px; color:#555; }
+.hm-label { font-size:9px; color:#333; letter-spacing:1px; }
+.hm-legend { display:flex; gap:16px; justify-content:center; margin-top:16px; font-size:12px; color:#333; }
+.hm-legend span { display:flex; align-items:center; gap:6px; }
+.hm-legend .dot { width:8px; height:8px; border-radius:2px; display:inline-block; }
+.hm-legend .dot.low { background:var(--orange); }
+.hm-legend .dot.high { background:var(--green); }
+
+/* ===== SLIDE 5: KEYWORDS ===== */
+.kw-wrap { max-width:800px; display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; padding:20px; }
+.kw-tag {
+  padding:8px 22px; border-radius:24px; font-weight:600;
+  border:1px solid #1a1a1a; transition:all .4s; cursor:default;
+  animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+}
+.kw-tag:hover { transform:scale(1.1); }
+.kw-tag.g { color:var(--green); border-color:var(--green); }
+.kw-tag.g:hover { background:rgba(0,255,65,.1); box-shadow:0 0 30px rgba(0,255,65,.15); }
+.kw-tag.o { color:var(--orange); border-color:var(--orange); }
+.kw-tag.o:hover { background:rgba(255,106,0,.1); box-shadow:0 0 30px rgba(255,106,0,.15); }
+.kw-xl { font-size:clamp(24px,4vw,36px); }
+.kw-lg { font-size:clamp(18px,3vw,26px); }
+.kw-md { font-size:16px; }
+.kw-sm { font-size:13px; }
+
+/* ===== SLIDE 6: TOPICS ===== */
+.tp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; max-width:1000px; width:100%; }
+.tp-card {
+  background:var(--card-bg); border:1px solid var(--border); border-radius:16px;
+  padding:24px; position:relative; overflow:hidden; transition:all .3s;
+}
+.tp-card:hover { border-color:var(--green); transform:translateY(-2px); }
+.tp-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.tp-card:nth-child(1)::before { background:var(--green); }
+.tp-card:nth-child(2)::before { background:var(--orange); }
+.tp-card:nth-child(3)::before { background:var(--green); }
+.tp-card:nth-child(4)::before { background:var(--orange); }
+.tp-card:nth-child(5)::before { background:var(--green); }
+.tp-pct {
+  font-family:'Mono',monospace; font-size:36px; font-weight:900;
+  line-height:1; margin-bottom:6px;
+}
+.tp-card:nth-child(odd) .tp-pct { color:var(--green); }
+.tp-card:nth-child(even) .tp-pct { color:var(--orange); }
+.tp-title { font-weight:700; font-size:16px; margin-bottom:8px; }
+.tp-desc { color:#555; font-size:12px; line-height:1.6; margin-bottom:10px; }
+.tp-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.tp-tags span { font-size:11px; padding:3px 8px; border-radius:4px; background:#111; color:#444; }
+
+/* ===== SLIDE 7: INSIGHTS ===== */
+.in-wrap { max-width:800px; width:100%; display:flex; flex-direction:column; gap:16px; }
+.in-row { display:flex; gap:16px; flex-wrap:wrap; }
+.in-item {
+  flex:1; min-width:180px; background:var(--card-bg); border:1px solid var(--border);
+  border-radius:12px; padding:20px;
+}
+.in-item .in-num { font-family:'Mono',monospace; font-size:28px; font-weight:900; color:var(--orange); }
+.in-item .in-lbl { font-size:12px; color:#555; margin-top:4px; }
+.in-text { color:#666; font-size:14px; line-height:1.8; padding:20px; background:var(--card-bg); border:1px solid var(--border); border-radius:12px; }
+
+/* ===== SLIDE 8: END ===== */
+.end-wrap { text-align:center; }
+.end-qr { width:80px; height:80px; background:#111; border:1px solid #222; border-radius:12px; margin:24px auto; display:flex; align-items:center; justify-content:center; font-size:32px; }
+
+/* Mobile */
+@media (max-width:640px) {
+  .slide { padding:20px 14px; }
+  .s1-grid { grid-template-columns:1fr; gap:24px; }
+  .s1-right { flex-direction:row; flex-wrap:wrap; gap:8px; }
+  .s1-stat { flex:1; min-width:100px; }
+  .stats-row { gap:10px; }
+  .stat-box { min-width:100px; padding:20px 10px; }
+  .lb-bar-wrap { display:none; }
+  .tp-grid { grid-template-columns:1fr; }
+  .hm-grid { gap:2px; height:180px; }
+  .hm-label { font-size:7px; }
+  .hm-count { font-size:9px; }
+  .nav-arrow { width:32px; height:32px; font-size:14px; }
+  .nav-prev { left:8px; }
+  .nav-next { right:8px; }
+}
+
+/* ===== SCANLINE EFFECT ===== */
+body::after {
+  content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+  pointer-events:none; z-index:999; opacity:.3;
+}
+
+/* ===== CORNER DECORATION ===== */
+.corner-deco {
+  position:fixed; pointer-events:none; z-index:0;
+}
+.corner-tl { top:0; left:0; width:200px; height:200px; background:radial-gradient(circle at top left,rgba(0,255,65,.04),transparent 70%); }
+.corner-br { bottom:0; right:0; width:300px; height:300px; background:radial-gradient(circle at bottom right,rgba(255,106,0,.04),transparent 70%); }
+</style>
+</head>
+<body>
+
+<div class="corner-deco corner-tl"></div>
+<div class="corner-deco corner-br"></div>
+
+<!-- BGM Toggle -->
+<div class="bgm-toggle" id="bgmBtn" onclick="toggleBGM()" title="BGM">
+  <span class="play-icon">♪</span>
+  <span class="eq"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></span>
+</div>
+
+<!-- Slide number -->
+<div class="slide-num" id="slideNum">01 / 08</div>
+
+<!-- Nav arrows -->
+<div class="nav-arrow nav-prev" onclick="goSlide(-1)">◂</div>
+<div class="nav-arrow nav-next" onclick="goSlide(1)">▸</div>
+
+<!-- Dot nav -->
+<div class="nav" id="navDots"></div>
+
+<!-- ===== SLIDES ===== -->
+<div class="slides" id="slides">
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide active" data-index="0">
+  <div class="s1-grid">
+    <div class="s1-left">
+      <div class="overline anim-fadeup" style="animation-delay:0s">2026 IP TRAINING CAMP</div>
+      <h1 class="huge anim-fadeup" style="animation-delay:.1s">
+        <span class="glow-text">交流2群</span><br>
+        <span style="font-size:.6em;color:#fff;">群聊分析报告</span>
+      </h1>
+      <div class="title-line anim-fadeup" style="animation-delay:.3s"></div>
+      <p class="muted anim-fadeup" style="animation-delay:.4s">2026.06.12 — 2026.06.16 · 5天 · 195人</p>
+    </div>
+    <div class="s1-right">
+      <div class="s1-stat anim-fadeup" style="animation-delay:.2s">
+        <div class="val glow-text">2,659</div><div class="lbl">TOTAL MESSAGES</div>
+      </div>
+      <div class="s1-stat anim-fadeup" style="animation-delay:.35s">
+        <div class="val glow-orange">404</div><div class="lbl">PEAK 23:00 HOURS</div>
+      </div>
+      <div class="s1-stat anim-fadeup" style="animation-delay:.5s">
+        <div class="val" style="color:#fff;">~500</div><div class="lbl">GROUP MEMBERS</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint anim-fadein" style="animation-delay:1s;">按 → 或点击右侧箭头翻页</div>
+</div>
+
+<!-- SLIDE 2: OVERVIEW -->
+<div class="slide" data-index="1">
+  <div class="overline" style="margin-bottom:12px;">// OVERVIEW</div>
+  <h2 class="big" style="margin-bottom:32px;">📊 <span class="glow-text">群聊数据</span>概览</h2>
+  <div class="stats-row">
+    <div class="stat-box"><div class="num" data-target="2659">0</div><div class="lbl">总消息数</div></div>
+    <div class="stat-box"><div class="num" data-target="195">0</div><div class="lbl">发言人数</div></div>
+    <div class="stat-box"><div class="num" data-target="5">0</div><div class="lbl">统计天数</div></div>
+    <div class="stat-box"><div class="num" data-target="532">0</div><div class="lbl">日均消息</div></div>
+    <div class="stat-box"><div class="num" data-target="767">0</div><div class="lbl">最高单日</div></div>
+  </div>
+</div>
+
+<!-- SLIDE 3: LEADERBOARD -->
+<div class="slide" data-index="2">
+  <div class="overline" style="margin-bottom:12px;">// LEADERBOARD</div>
+  <h2 class="big" style="margin-bottom:28px;">🏆 活跃<span class="glow-orange">排行榜</span> TOP 10</h2>
+  <div class="lb-wrap" id="lbWrap"></div>
+</div>
+
+<!-- SLIDE 4: HEATMAP -->
+<div class="slide" data-index="3">
+  <div class="overline" style="margin-bottom:12px;">// ACTIVITY HEATMAP</div>
+  <h2 class="big" style="margin-bottom:28px;">🔥 <span class="glow-text">24小时</span>活跃分布</h2>
+  <div class="hm-wrap">
+    <div class="hm-grid" id="hmGrid"></div>
+    <div class="hm-legend">
+      <span><span class="dot low"></span> 普通活跃</span>
+      <span><span class="dot high"></span> 高频时段</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: KEYWORDS -->
+<div class="slide" data-index="4">
+  <div class="overline" style="margin-bottom:12px;">// KEYWORDS</div>
+  <h2 class="big" style="margin-bottom:28px;">🏷️ 热门<span class="glow-text">关键词</span></h2>
+  <div class="kw-wrap" id="kwWrap"></div>
+</div>
+
+<!-- SLIDE 6: TOPICS -->
+<div class="slide" data-index="5">
+  <div class="overline" style="margin-bottom:12px;">// TOPICS</div>
+  <h2 class="big" style="margin-bottom:28px;">🧭 话题<span class="glow-orange">方向</span>分类</h2>
+  <div class="tp-grid" id="tpGrid"></div>
+</div>
+
+<!-- SLIDE 7: INSIGHTS -->
+<div class="slide" data-index="6">
+  <div class="overline" style="margin-bottom:12px;">// INSIGHTS</div>
+  <h2 class="big" style="margin-bottom:28px;">💡 <span class="glow-text">深度</span>洞察</h2>
+  <div class="in-wrap">
+    <div class="in-row">
+      <div class="in-item"><div class="in-num">23:00 · 13:00</div><div class="in-lbl">双峰时段 · 夜猫子模式</div></div>
+      <div class="in-item"><div class="in-num">6月12日</div><div class="in-lbl">开营首日爆发 767 条</div></div>
+      <div class="in-item"><div class="in-num">767→686→274→630→303</div><div class="in-lbl">每日消息趋势</div></div>
+    </div>
+    <div class="in-text">
+      📈 双峰模式：下午茶时间 <span class="orange">13-14点</span> 是第一波高峰，深夜 <span class="green">22-23点</span> 达到最高潮 —— 群友人均夜猫子。<br>
+      📉 14日周日明显回落至274条，15日又迅速回升到630条。<br>
+      🎯 群文化核心：<span class="orange">行动至上</span> · 开源共享 · AI Native · 技术扩散
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: END -->
+<div class="slide" data-index="7">
+  <div class="end-wrap">
+    <div class="overline" style="margin-bottom:12px;">// END</div>
+    <h2 class="huge glow-text" style="font-size:clamp(40px,8vw,80px);">谢谢观看</h2>
+    <div class="title-line" style="margin:24px auto;width:80px;"></div>
+    <p class="muted">交流2群🌲2026IP训练营</p>
+    <p class="dim" style="margin-top:8px;">数据导出 2026-06-16 · AI 辅助分析</p>
+    <div class="end-qr">🌲</div>
+    <p style="color:#333;font-size:12px;margin-top:12px;">Made with ❤️ for the community</p>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<script>
+// ===== DATA =====
+var topSpeakers = [{"rank":1,"name":"是阿扶耶.","count":204,"role":"核心贡献者/教程作者"},{"rank":2,"name":"蝶秋","count":185,"role":"活跃新人"},{"rank":3,"name":"Auluolalalala","count":140,"role":"活跃成员"},{"rank":4,"name":"L","count":95,"role":"活跃成员"},{"rank":5,"name":"A","count":95,"role":"活跃成员"},{"rank":6,"name":"树林","count":94,"role":"群主/训练营创始人"},{"rank":7,"name":"陆离🍀","count":69,"role":"活跃成员"},{"rank":8,"name":"Xyroha","count":69,"role":"活跃成员/AI视频方向"},{"rank":9,"name":"余白","count":68,"role":"活跃成员"},{"rank":10,"name":"链屿","count":67,"role":"活跃成员"}];
+
+var hourlyDist = [{"hour":0,"count":130},{"hour":1,"count":188},{"hour":2,"count":13},{"hour":3,"count":9},{"hour":4,"count":0},{"hour":5,"count":4},{"hour":6,"count":3},{"hour":7,"count":7},{"hour":8,"count":21},{"hour":9,"count":49},{"hour":10,"count":63},{"hour":11,"count":77},{"hour":12,"count":101},{"hour":13,"count":249},{"hour":14,"count":210},{"hour":15,"count":153},{"hour":16,"count":181},{"hour":17,"count":90},{"hour":18,"count":104},{"hour":19,"count":119},{"hour":20,"count":140},{"hour":21,"count":167},{"hour":22,"count":178},{"hour":23,"count":404}];
+
+var topWords = [{"word":"聊天记录","count":51},{"word":"谢谢","count":21},{"word":"好的","count":20},{"word":"兄弟们","count":18},{"word":"问题","count":12},{"word":"感谢","count":11},{"word":"教程","count":8},{"word":"账号","count":8},{"word":"谷歌","count":8},{"word":"AI","count":8},{"word":"下载","count":7},{"word":"网站","count":7},{"word":"大神","count":6},{"word":"大佬","count":6},{"word":"直播","count":6},{"word":"电脑","count":6},{"word":"魔法","count":5},{"word":"教程网站","count":4},{"word":"微信导出","count":3}];
+
+var topicCategories = [{"topic":"环境搭建与工具安装","percentage":35,"keywords":["Claude Code","CC Switch","DeepSeek","API","Node.js","Git","VS Code","WorkBuddy","Codex","谷歌账号","魔法/上网"],"description":"群聊最主要话题。大量新人请教安装配置、解决环境问题。"},{"topic":"教程与资源分享","percentage":25,"keywords":["星野微信教程","阿扶耶AI全栈指南","期善Mic新手网站","cclearning.cn","claude-tutorial.pages.dev","hermes教程"],"description":"核心贡献者制作了大量中文教程网站，帮助新人快速上手。"},{"topic":"AI项目展示与交流","percentage":20,"keywords":["网页","网站","部署","GitHub Pages","Netlify","Surge","游戏","生图","视频"],"description":"群友展示用AI做的项目：游戏、网站、AI模特图、思维导图等。"},{"topic":"AI趋势与认知讨论","percentage":12,"keywords":["Token","API价格","Fable","Opus","算力","生产资料","技术扩散"],"description":"讨论AI行业趋势、模型优劣对比、费用、技术扩散理念。"},{"topic":"接单与变现","percentage":8,"keywords":["接单","有偿","代充","红包","闲鱼","aipayok.com","代付"],"description":"部分成员讨论通过帮人配置环境、代充API、做项目赚取报酬。"}];
+
+var avatarColor = ['#ff6a00','#ff8c00','#00ff41','#1a1a1a','#1a1a1a','#1a1a1a','#1a1a1a','#1a1a1a','#1a1a1a','#1a1a1a'];
+
+// ===== SLIDE SYSTEM =====
+var current = 0;
+var total = 8;
+var slides = document.querySelectorAll('.slide');
+var dots = [];
+
+// Build dots
+var navDots = document.getElementById('navDots');
+for (var i=0;i<total;i++) {
+  (function(idx){
+    var d = document.createElement('div');
+    d.className = 'nav-dot' + (idx===0?' active':'');
+    d.onclick = function(){ goTo(idx); };
+    navDots.appendChild(d);
+    dots.push(d);
+  })(i);
+}
+
+function goTo(n) {
+  if (n===current) return;
+  slides[current].classList.remove('active');
+  slides[current].classList.add(n>current?'exit-left':'exit-right');
+  dots[current].classList.remove('active');
+  current = n;
+  slides[current].classList.remove('exit-left','exit-right');
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+  document.getElementById('slideNum').textContent = ('0'+(current+1)).slice(-2)+' / '+'0'+total;
+  onSlideEnter(current);
+}
+
+function goSlide(dir) {
+  var n = current + dir;
+  if (n>=0 && n<total) goTo(n);
+}
+
+// Keyboard
+document.addEventListener('keydown',function(e){
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') goSlide(1);
+  if (e.key==='ArrowLeft'||e.key==='ArrowUp') goSlide(-1);
+  if (e.key===' ') { e.preventDefault(); toggleBGM(); }
+});
+
+// Touch
+var touchX=0;
+document.addEventListener('touchstart',function(e){ touchX=e.touches[0].clientX; });
+document.addEventListener('touchend',function(e){
+  var dx = e.changedTouches[0].clientX - touchX;
+  if (Math.abs(dx)>50) goSlide(dx<0?1:-1);
+});
+
+// ===== SLIDE ENTER EFFECTS =====
+var entered = {};
+function onSlideEnter(n) {
+  if (entered[n]) return; entered[n]=true;
+  if (n===1) animateCounters();
+  if (n===2) renderLeaderboard();
+  if (n===3) renderHeatmap();
+  if (n===4) renderKeywords();
+  if (n===5) renderTopics();
+}
+
+// ===== COUNTER ANIMATION (Slide 2) =====
+function animateCounters() {
+  var nums = document.querySelectorAll('.stat-box .num[data-target]');
+  nums.forEach(function(el){
+    var target = parseInt(el.getAttribute('data-target'));
+    var dur = 1200, start = performance.now();
+    function tick(now) {
+      var p = Math.min((now-start)/dur,1);
+      p = 1 - Math.pow(1-p,3); // ease-out
+      el.textContent = Math.round(p*target).toLocaleString();
+      if (p<1) requestAnimationFrame(tick);
+      else el.textContent = target.toLocaleString();
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+// ===== LEADERBOARD (Slide 3) =====
+function renderLeaderboard() {
+  var max = topSpeakers[0].count;
+  var html = '';
+  topSpeakers.forEach(function(p,i){
+    var c = i<3 ? 'c'+(i+1) : 'c4';
+    var initials = p.name.replace(/[^一-龥a-zA-Z]/g,'').slice(0,2)||'?';
+    html += '<div class="lb-item anim-fadeup" style="animation-delay:'+(i*.08)+'s">';
+    html += '<div class="lb-rank-num">'+(i<9?'0':'')+(i+1)+'</div>';
+    html += '<div class="lb-av '+c+'">'+initials+'</div>';
+    html += '<div class="lb-info"><div class="lb-name">'+p.name+'</div><div class="lb-role">'+p.role+'</div></div>';
+    html += '<div class="lb-bar-wrap"><div class="lb-bar-fill" style="width:'+Math.round(p.count/max*100)+'%;background:'+(i%2===0?'#00ff41':'#ff6a00')+'"></div></div>';
+    html += '<div class="lb-count">'+p.count+'</div>';
+    html += '</div>';
+  });
+  document.getElementById('lbWrap').innerHTML = html;
+}
+
+// ===== HEATMAP (Slide 4) =====
+function renderHeatmap() {
+  var max = Math.max.apply(null,hourlyDist.map(function(d){return d.count;}));
+  var threshold = max * 0.5;
+  var html = '';
+  hourlyDist.forEach(function(d){
+    var isHot = d.count >= threshold;
+    var h = Math.max(d.count/max*220, 4);
+    html += '<div class="hm-col">';
+    html += '<div class="hm-count">'+(d.count||'')+'</div>';
+    html += '<div class="hm-bar '+(isHot?'hot':'peek')+'" style="height:'+h+'px" title="'+d.hour+':00 — '+d.count+'条"></div>';
+    html += '<div class="hm-label">'+d.hour+'h</div>';
+    html += '</div>';
+  });
+  document.getElementById('hmGrid').innerHTML = html;
+}
+
+// ===== KEYWORDS (Slide 5) =====
+function renderKeywords() {
+  var max = topWords[0].count;
+  var html = '';
+  var clsMap = [
+    'g','g','o','g','o','g','o','o','g','g',
+    'o','g','o','o','g','o','o','g','o'
+  ];
+  topWords.forEach(function(w,i){
+    var cls;
+    if (w.count >= 15) cls = 'kw-xl';
+    else if (w.count >= 10) cls = 'kw-lg';
+    else if (w.count >= 7) cls = 'kw-md';
+    else cls = 'kw-sm';
+    var c = clsMap[i] || (i%2?'o':'g');
+    html += '<span class="kw-tag '+cls+' '+c+'" style="animation-delay:'+(i*.06)+'s">'+w.word+'</span>';
+  });
+  document.getElementById('kwWrap').innerHTML = html;
+}
+
+// ===== TOPICS (Slide 6) =====
+function renderTopics() {
+  var html = '';
+  topicCategories.forEach(function(t,i){
+    html += '<div class="tp-card anim-fadeup" style="animation-delay:'+(i*.12)+'s">';
+    html += '<div class="tp-pct">'+t.percentage+'%</div>';
+    html += '<div class="tp-title">'+t.topic+'</div>';
+    html += '<div class="tp-desc">'+t.description+'</div>';
+    html += '<div class="tp-tags">';
+    t.keywords.forEach(function(k){ html += '<span>#'+k+'</span>'; });
+    html += '</div></div>';
+  });
+  document.getElementById('tpGrid').innerHTML = html;
+}
+
+// ===== BGM: Web Audio API ambient generator =====
+var bgmOn = false;
+var audioCtx = null;
+var bgmNodes = [];
+
+function toggleBGM() {
+  bgmOn = !bgmOn;
+  var btn = document.getElementById('bgmBtn');
+  if (bgmOn) {
+    btn.classList.add('on');
+    startBGM();
+  } else {
+    btn.classList.remove('on');
+    stopBGM();
+  }
+}
+
+function startBGM() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  var now = audioCtx.currentTime;
+
+  // Bass drone - deep ambient
+  var bass = audioCtx.createOscillator();
+  bass.type = 'sine';
+  bass.frequency.value = 55;
+  var bassGain = audioCtx.createGain();
+  bassGain.gain.setValueAtTime(0,now);
+  bassGain.gain.linearRampToValueAtTime(0.08,now+.5);
+  bass.connect(bassGain);
+  bassGain.connect(audioCtx.destination);
+  bass.start(now);
+  bgmNodes.push({osc:bass,gain:bassGain});
+
+  // Pad 1
+  var pad = audioCtx.createOscillator();
+  pad.type = 'triangle';
+  pad.frequency.value = 110;
+  var padGain = audioCtx.createGain();
+  padGain.gain.setValueAtTime(0,now);
+  padGain.gain.linearRampToValueAtTime(0.04,now+.8);
+  pad.connect(padGain);
+  padGain.connect(audioCtx.destination);
+  pad.start(now);
+  bgmNodes.push({osc:pad,gain:padGain});
+
+  // High shimmer
+  var hi = audioCtx.createOscillator();
+  hi.type = 'sine';
+  hi.frequency.value = 880;
+  var hiGain = audioCtx.createGain();
+  hiGain.gain.setValueAtTime(0,now);
+  hiGain.gain.linearRampToValueAtTime(0.015,now+1);
+  hi.connect(hiGain);
+  hiGain.connect(audioCtx.destination);
+  hi.start(now);
+  bgmNodes.push({osc:hi,gain:hiGain});
+
+  // LFO modulation
+  var lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.15;
+  var lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 5;
+  lfo.connect(lfoGain);
+  lfoGain.connect(bass.frequency);
+  lfo.start(now);
+  bgmNodes.push({osc:lfo,gain:lfoGain});
+}
+
+function stopBGM() {
+  bgmNodes.forEach(function(n){
+    var t = audioCtx.currentTime;
+    n.gain.gain.linearRampToValueAtTime(0,t+.3);
+    n.osc.stop(t+.4);
+  });
+  bgmNodes = [];
+}
+
+// ===== INIT =====
+document.getElementById('slideNum').textContent = '01 / 08';
+
+// Auto-start BGM on first interaction
+var autoStart = function(){
+  if (!bgmOn) toggleBGM();
+  document.removeEventListener('click',autoStart);
+  document.removeEventListener('keydown',autoStart);
+};
+document.addEventListener('click',autoStart);
+document.addEventListener('keydown',autoStart);
+</script>
+
+</body>
+</html>

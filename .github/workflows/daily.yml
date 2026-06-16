@@ -1,0 +1,55 @@
+name: 每日群聊分析
+
+on:
+  # 每天北京时间 8:00 (UTC 0:00) 自动运行
+  schedule:
+    - cron: '0 0 * * *'
+  # 每次 push 到 main 分支也运行
+  push:
+    branches: [main]
+  # 允许手动触发
+  workflow_dispatch:
+
+# 给 Pages 部署写权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 运行分析
+        run: python3 scripts/analyze.py messages.txt index.html
+
+      - name: 上传网页
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+          name: 'github-pages'
+
+  deploy:
+    needs: analyze
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: 'github-pages'
